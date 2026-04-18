@@ -1,0 +1,17 @@
+{
+  "name": "seo-for-korean",
+  "version": "0.1.0",
+  "description": "Korean WordPress SEO. Naver-aware, AI-assisted, GPL.",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "format": "wp-scripts format",
+    "lint:js": "wp-scripts lint-js",
+    "packages-update": "wp-scripts packages-update"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  }
+}

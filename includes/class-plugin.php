@@ -65,7 +65,7 @@ final class Plugin {
 	}
 
 	public function enqueue_editor_assets(): void {
-		$asset_file = SFK_PATH . 'assets/admin/js/editor-sidebar.asset.php';
+		$asset_file = SFK_PATH . 'build/editor-sidebar.asset.php';
 		$deps       = [ 'wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data', 'wp-i18n' ];
 		$version    = SFK_VERSION;
 
@@ -77,7 +77,7 @@ final class Plugin {
 
 		wp_enqueue_script(
 			'seo-for-korean-editor-sidebar',
-			SFK_URL . 'assets/admin/js/editor-sidebar.js',
+			SFK_URL . 'build/editor-sidebar.js',
 			$deps,
 			$version,
 			true
