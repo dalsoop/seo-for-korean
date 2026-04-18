@@ -72,6 +72,13 @@ final class Head_Meta_Module {
 		$tags[] = [ 'property', 'article:modified_time', mysql2date( 'c', $post->post_modified_gmt, false ) ];
 
 		echo "<!-- SEO for Korean -->\n";
+
+		// rel=canonical — only emit if WP core's rel_canonical isn't already
+		// hooked. Avoids double-canonical conflicts that confuse search engines.
+		if ( ! has_action( 'wp_head', 'rel_canonical' ) && $url !== '' && $url !== false ) {
+			printf( "<link rel=\"canonical\" href=\"%s\" />\n", esc_url( $url ) );
+		}
+
 		foreach ( $tags as [ $attr, $name, $value ] ) {
 			if ( $value === '' || $value === null ) {
 				continue;
