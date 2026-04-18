@@ -28,6 +28,7 @@ final class Plugin {
 	public function boot(): void {
 		add_action( 'plugins_loaded', [ $this, 'load_textdomain' ] );
 		add_action( 'init', [ $this, 'register_modules' ], 5 );
+		add_action( 'init', [ $this, 'maybe_flush_rewrite' ], 9999 );
 		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 		add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_editor_assets' ] );
 	}
@@ -51,7 +52,9 @@ final class Plugin {
 		$modules = apply_filters(
 			'sfk/modules',
 			[
-				'example' => Modules\Example\Example_Module::class,
+				'example'        => Modules\Example\Example_Module::class,
+				'naver-meta'     => Modules\NaverMeta\Naver_Meta_Module::class,
+				'naver-sitemap'  => Modules\NaverSitemap\Naver_Sitemap_Module::class,
 			]
 		);
 
@@ -90,16 +93,30 @@ final class Plugin {
 		);
 	}
 
+	/**
+	 * Modules that add rewrite rules register them on `init`, which fires
+	 * AFTER activation. We can't flush during activate() because the rules
+	 * aren't registered yet — instead we flag, and {@see maybe_flush_rewrite}
+	 * picks it up on the next request.
+	 */
+	public function maybe_flush_rewrite(): void {
+		if ( get_option( 'sfk_needs_rewrite_flush' ) !== '1' ) {
+			return;
+		}
+		flush_rewrite_rules( false );
+		delete_option( 'sfk_needs_rewrite_flush' );
+	}
+
 	public static function activate(): void {
 		// Defaults seed, capability registration, db migrations.
 		add_option(
 			'sfk_settings',
 			[
 				'version'         => SFK_VERSION,
-				'enabled_modules' => [ 'example' ],
+				'enabled_modules' => [ 'naver-meta', 'naver-sitemap' ],
 			]
 		);
-		flush_rewrite_rules();
+		update_option( 'sfk_needs_rewrite_flush', '1' );
 	}
 
 	public static function deactivate(): void {
