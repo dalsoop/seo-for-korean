@@ -53,6 +53,7 @@ final class Plugin {
 			'sfk/modules',
 			[
 				'content-analyzer' => Modules\ContentAnalyzer\Content_Analyzer_Module::class,
+				'head-meta'        => Modules\HeadMeta\Head_Meta_Module::class,
 				'naver-meta'       => Modules\NaverMeta\Naver_Meta_Module::class,
 				'naver-sitemap'    => Modules\NaverSitemap\Naver_Sitemap_Module::class,
 				'example'          => Modules\Example\Example_Module::class,
@@ -114,7 +115,7 @@ final class Plugin {
 			'sfk_settings',
 			[
 				'version'         => SFK_VERSION,
-				'enabled_modules' => [ 'content-analyzer', 'naver-meta', 'naver-sitemap' ],
+				'enabled_modules' => [ 'content-analyzer', 'head-meta', 'naver-meta', 'naver-sitemap' ],
 			]
 		);
 		update_option( 'sfk_needs_rewrite_flush', '1' );
