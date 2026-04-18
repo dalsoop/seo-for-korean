@@ -29,7 +29,7 @@ final class Content_Analyzer_Test extends TestCase {
 		$result = $this->analyzer->analyze( [] );
 		self::assertLessThanOrEqual( 30, $result['score'], 'empty post should be poor' );
 		self::assertSame( 'poor', $result['grade'] );
-		self::assertCount( 10, $result['checks'] );
+		self::assertCount( 18, $result['checks'] );
 	}
 
 	public function test_well_formed_korean_post_scores_at_least_good(): void {
@@ -285,6 +285,104 @@ final class Content_Analyzer_Test extends TestCase {
 			]
 		);
 		$check = $this->find_check( $result, 'focus_keyword_in_title' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	/* ----- Keyword distribution (new) ----- */
+
+	public function test_keyword_density_excess_fails(): void {
+		$content = '<p>' . str_repeat( '워드프레스 ', 20 ) . '</p>';
+		$result  = $this->analyzer->analyze( [ 'content' => $content, 'focus_keyword' => '워드프레스' ] );
+		$check   = $this->find_check( $result, 'keyword_density' );
+		self::assertSame( 'fail', $check['status'] );
+	}
+
+	public function test_keyword_density_zero_fails_when_keyword_set(): void {
+		$result = $this->analyzer->analyze(
+			[
+				'content'       => '<p>키워드가 전혀 없는 본문입니다. 매우 다양한 글이 적절히 들어 있습니다.</p>',
+				'focus_keyword' => '워드프레스',
+			]
+		);
+		$check = $this->find_check( $result, 'keyword_density' );
+		self::assertSame( 'fail', $check['status'] );
+	}
+
+	public function test_keyword_in_meta_description_pass(): void {
+		$result = $this->analyzer->analyze(
+			[
+				'focus_keyword'    => '워드프레스',
+				'meta_description' => '이 글은 워드프레스 입문자를 위한 가이드입니다.',
+			]
+		);
+		$check = $this->find_check( $result, 'keyword_in_meta_description' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	public function test_keyword_in_h2_pass(): void {
+		$result = $this->analyzer->analyze(
+			[
+				'content'       => '<h2>워드프레스 입문</h2><p>본문</p><h2>설치 방법</h2>',
+				'focus_keyword' => '워드프레스',
+			]
+		);
+		$check = $this->find_check( $result, 'keyword_in_h2' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	public function test_keyword_in_slug_na_for_korean_keyword(): void {
+		$result = $this->analyzer->analyze(
+			[
+				'slug'          => 'wordpress-guide',
+				'focus_keyword' => '워드프레스',
+			]
+		);
+		$check = $this->find_check( $result, 'keyword_in_slug' );
+		self::assertSame( 'na', $check['status'] );
+	}
+
+	public function test_keyword_in_slug_pass_for_ascii(): void {
+		$result = $this->analyzer->analyze(
+			[
+				'slug'          => 'wordpress-guide',
+				'focus_keyword' => 'wordpress',
+			]
+		);
+		$check = $this->find_check( $result, 'keyword_in_slug' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	/* ----- Links (new) ----- */
+
+	public function test_internal_and_outbound_links_counted(): void {
+		$html   = '<p><a href="/about">about</a> <a href="https://example.com">ext</a> <a href="#anchor">a</a></p>';
+		$result = $this->analyzer->analyze( [ 'content' => $html ] );
+		$i      = $this->find_check( $result, 'internal_links' );
+		$o      = $this->find_check( $result, 'outbound_links' );
+		self::assertSame( 'pass', $i['status'] );
+		self::assertStringContainsString( '1개', $i['message'] );
+		self::assertSame( 'pass', $o['status'] );
+		self::assertStringContainsString( '1개', $o['message'] );
+	}
+
+	public function test_no_links_warns_both(): void {
+		$result = $this->analyzer->analyze( [ 'content' => '<p>링크 없음</p>' ] );
+		self::assertSame( 'warning', $this->find_check( $result, 'internal_links' )['status'] );
+		self::assertSame( 'warning', $this->find_check( $result, 'outbound_links' )['status'] );
+	}
+
+	/* ----- Readability (new) ----- */
+
+	public function test_long_paragraph_warns(): void {
+		$long   = str_repeat( '가', 600 );
+		$result = $this->analyzer->analyze( [ 'content' => "<p>{$long}</p>" ] );
+		$check  = $this->find_check( $result, 'paragraph_length' );
+		self::assertSame( 'warning', $check['status'] );
+	}
+
+	public function test_short_paragraphs_pass(): void {
+		$result = $this->analyzer->analyze( [ 'content' => '<p>짧은 문단입니다.</p><p>또 다른 짧은 문단.</p>' ] );
+		$check  = $this->find_check( $result, 'paragraph_length' );
 		self::assertSame( 'pass', $check['status'] );
 	}
 
