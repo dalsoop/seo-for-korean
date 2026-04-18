@@ -102,4 +102,43 @@ class Morphology_Client {
 			'matches' => array_values( array_map( 'strval', (array) $body['matches'] ) ),
 		];
 	}
+
+	/**
+	 * Run a full SEO analysis on the gateway. Returns the gateway's response
+	 * verbatim ({score, grade, checks}) — the plugin's REST handler passes
+	 * it straight back to the editor.
+	 *
+	 * Returns null on any failure so the caller can fall back to its
+	 * in-PHP Content_Analyzer. Same health-cache writeback as
+	 * keyword_contains() — failures pin the gateway as down for 60s.
+	 *
+	 * @param array<string, string> $input title, content, slug, focus_keyword, meta_description
+	 * @return array{score: int, grade: string, checks: array<int, array<string, mixed>>, engine?: string}|null
+	 */
+	public function analyze_post( array $input ): ?array {
+		if ( $this->gateway_url() === '' ) {
+			return null;
+		}
+
+		$response = wp_remote_post(
+			$this->gateway_url() . '/analyze',
+			[
+				'timeout' => $this->timeout(),
+				'headers' => [ 'content-type' => 'application/json' ],
+				'body'    => wp_json_encode( $input ),
+			]
+		);
+
+		if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+			set_transient( self::HEALTH_TRANSIENT, '0', self::HEALTH_TTL );
+			return null;
+		}
+
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $body ) || ! isset( $body['score'], $body['grade'], $body['checks'] ) ) {
+			return null;
+		}
+
+		return $body;
+	}
 }
