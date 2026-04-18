@@ -21,12 +21,16 @@ declare( strict_types=1 );
 
 namespace SEOForKorean\Modules\ContentAnalyzer;
 
+use SEOForKorean\Morphology\Morphology_Client;
+
 defined( 'ABSPATH' ) || exit;
 
 final class Content_Analyzer {
 
 	/** Common Korean particles appended after nouns. Naive — V2 uses morphology. */
 	private const PARTICLES = '을|를|이|가|은|는|에|에서|의|와|과|도|만|보다|에게|께|로|으로|로서|으로서|로써|으로써|만큼|처럼|같이|마저|조차|이나|나|이라도|라도|이라고|라고|이라며|라며';
+
+	public function __construct( private ?Morphology_Client $morphology = null ) {}
 
 	/**
 	 * @param array<string, mixed> $input
@@ -100,6 +104,40 @@ final class Content_Analyzer {
 		return '/' . preg_quote( $keyword, '/' ) . '(?:' . self::PARTICLES . ')?/u';
 	}
 
+	/**
+	 * Count keyword occurrences in $text. Tries the morphology gateway when
+	 * available; falls back to in-PHP regex on failure or absence. Both paths
+	 * agree for V1 (same algorithm) — the gateway hop exists so V2 morphology
+	 * lands without changing the analyzer.
+	 *
+	 * @return array{count: int, matches: list<string>}
+	 */
+	private function find_keyword( string $text, string $keyword ): array {
+		if ( $keyword === '' || $text === '' ) {
+			return [ 'count' => 0, 'matches' => [] ];
+		}
+
+		if ( $this->morphology !== null && $this->morphology->is_available() ) {
+			$remote = $this->morphology->keyword_contains( $text, $keyword );
+			if ( $remote !== null ) {
+				return $remote;
+			}
+		}
+
+		$regex = $this->keyword_regex( $keyword );
+		if ( $regex === '' ) {
+			return [ 'count' => 0, 'matches' => [] ];
+		}
+		$count   = preg_match_all( $regex, $text, $matches );
+		$count   = is_int( $count ) ? $count : 0;
+		$matches = $matches[0] ?? [];
+
+		return [
+			'count'   => $count,
+			'matches' => array_values( array_map( 'strval', $matches ) ),
+		];
+	}
+
 	/* -------------------------------------------------------------------- */
 	/* Individual checks                                                     */
 	/* -------------------------------------------------------------------- */
@@ -154,8 +192,8 @@ final class Content_Analyzer {
 		if ( $kw === '' ) {
 			return $this->result( 'focus_keyword_in_title', '제목에 포커스 키워드', 'na', '', 10 );
 		}
-		$regex = $this->keyword_regex( $kw );
-		if ( $regex !== '' && preg_match( $regex, (string) $ctx['title'] ) === 1 ) {
+		$found = $this->find_keyword( (string) $ctx['title'], $kw );
+		if ( $found['count'] > 0 ) {
 			return $this->result( 'focus_keyword_in_title', '제목에 포커스 키워드', 'pass', '제목에 포커스 키워드가 포함되어 있습니다.', 10 );
 		}
 		return $this->result( 'focus_keyword_in_title', '제목에 포커스 키워드', 'fail', '제목에 포커스 키워드가 없습니다.', 10 );
@@ -168,8 +206,8 @@ final class Content_Analyzer {
 			return $this->result( 'focus_keyword_in_first_paragraph', '첫 단락에 포커스 키워드', 'na', '', 10 );
 		}
 		$first = mb_substr( (string) $ctx['content_text'], 0, 200 );
-		$regex = $this->keyword_regex( $kw );
-		if ( $regex !== '' && preg_match( $regex, $first ) === 1 ) {
+		$found = $this->find_keyword( $first, $kw );
+		if ( $found['count'] > 0 ) {
 			return $this->result( 'focus_keyword_in_first_paragraph', '첫 단락에 포커스 키워드', 'pass', '첫 단락에 포커스 키워드가 등장합니다.', 10 );
 		}
 		return $this->result( 'focus_keyword_in_first_paragraph', '첫 단락에 포커스 키워드', 'warning', '첫 200자 안에 포커스 키워드가 없습니다.', 10 );
@@ -181,11 +219,7 @@ final class Content_Analyzer {
 		if ( $kw === '' ) {
 			return $this->result( 'focus_keyword_in_content', '본문에 포커스 키워드', 'na', '', 10 );
 		}
-		$regex = $this->keyword_regex( $kw );
-		if ( $regex === '' ) {
-			return $this->result( 'focus_keyword_in_content', '본문에 포커스 키워드', 'na', '', 10 );
-		}
-		$count = preg_match_all( $regex, (string) $ctx['content_text'] ) ?: 0;
+		$count = $this->find_keyword( (string) $ctx['content_text'], $kw )['count'];
 		if ( $count === 0 ) {
 			return $this->result( 'focus_keyword_in_content', '본문에 포커스 키워드', 'fail', '본문에 포커스 키워드가 없습니다.', 10 );
 		}

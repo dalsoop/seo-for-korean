@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace SEOForKorean\Modules\ContentAnalyzer;
 
 use SEOForKorean\Helper;
+use SEOForKorean\Morphology\Morphology_Client;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -61,7 +62,7 @@ final class Content_Analyzer_Module {
 	}
 
 	public function handle_analyze( \WP_REST_Request $request ): \WP_REST_Response {
-		$analyzer = new Content_Analyzer();
+		$analyzer = new Content_Analyzer( new Morphology_Client() );
 		$result   = $analyzer->analyze(
 			[
 				'title'            => (string) $request->get_param( 'title' ),
