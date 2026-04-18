@@ -49,13 +49,33 @@ if ( version_compare( PHP_VERSION, SFK_MIN_PHP, '<' ) ) {
 	return;
 }
 
+// Built-in PSR-4-ish autoloader. Maps `SEOForKorean\Foo\Bar_Baz`
+// → `includes/foo/class-bar-baz.php`. Composer's autoloader, if present, takes
+// precedence (registered first) — this is the fallback so the plugin works
+// when shipped without `vendor/`.
 if ( file_exists( SFK_PATH . 'vendor/autoload.php' ) ) {
 	require_once SFK_PATH . 'vendor/autoload.php';
 }
 
-require_once SFK_PATH . 'includes/class-helper.php';
-require_once SFK_PATH . 'includes/class-modules.php';
-require_once SFK_PATH . 'includes/class-plugin.php';
+spl_autoload_register(
+	static function ( string $class ): void {
+		$prefix = 'SEOForKorean\\';
+		if ( strpos( $class, $prefix ) !== 0 ) {
+			return;
+		}
+
+		$relative = substr( $class, strlen( $prefix ) );
+		$parts    = explode( '\\', $relative );
+		$class_nm = array_pop( $parts );
+
+		$dir = $parts === [] ? '' : strtolower( implode( '/', $parts ) ) . '/';
+		$file = SFK_PATH . 'includes/' . $dir . 'class-' . str_replace( '_', '-', strtolower( $class_nm ) ) . '.php';
+
+		if ( file_exists( $file ) ) {
+			require_once $file;
+		}
+	}
+);
 
 \SEOForKorean\Plugin::instance()->boot();
 
