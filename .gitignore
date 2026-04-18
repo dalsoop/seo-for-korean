@@ -11,3 +11,4 @@
 .phpcs-cache
 composer.lock
 package-lock.json
+/.phpunit.cache
