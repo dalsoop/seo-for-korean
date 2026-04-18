@@ -11,5 +11,3 @@
 .phpcs-cache
 composer.lock
 package-lock.json
-assets/admin/js/*.asset.php
-assets/admin/js/editor-sidebar.js
