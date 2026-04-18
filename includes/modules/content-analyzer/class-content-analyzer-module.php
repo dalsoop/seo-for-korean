@@ -62,16 +62,33 @@ final class Content_Analyzer_Module {
 	}
 
 	public function handle_analyze( \WP_REST_Request $request ): \WP_REST_Response {
-		$analyzer = new Content_Analyzer( new Morphology_Client() );
-		$result   = $analyzer->analyze(
-			[
-				'title'            => (string) $request->get_param( 'title' ),
-				'content'          => (string) $request->get_param( 'content' ),
-				'slug'             => (string) $request->get_param( 'slug' ),
-				'focus_keyword'    => (string) $request->get_param( 'focus_keyword' ),
-				'meta_description' => (string) $request->get_param( 'meta_description' ),
-			]
-		);
+		$input = [
+			'title'            => (string) $request->get_param( 'title' ),
+			'content'          => (string) $request->get_param( 'content' ),
+			'slug'             => (string) $request->get_param( 'slug' ),
+			'focus_keyword'    => (string) $request->get_param( 'focus_keyword' ),
+			'meta_description' => (string) $request->get_param( 'meta_description' ),
+		];
+
+		$client = new Morphology_Client();
+
+		// Try the gateway first — it's the canonical implementation and the
+		// path we keep extending. The local Content_Analyzer is the safety
+		// net that runs when the gateway is down or unconfigured.
+		if ( $client->is_available() ) {
+			$remote = $client->analyze_post( $input );
+			if ( $remote !== null ) {
+				$remote['source'] = 'gateway';
+				return new \WP_REST_Response( $remote, 200 );
+			}
+		}
+
+		// Fallback: same shape, computed in PHP. Pass the morphology client
+		// so even fallback gets gateway-assisted keyword counts when the
+		// /analyze endpoint is down but /keyword/contains is still up.
+		$analyzer = new Content_Analyzer( $client );
+		$result   = $analyzer->analyze( $input );
+		$result['source'] = 'local';
 
 		return new \WP_REST_Response( $result, 200 );
 	}
