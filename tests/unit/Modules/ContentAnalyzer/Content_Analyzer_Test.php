@@ -14,12 +14,14 @@ namespace SEOForKorean\Tests\Unit\Modules\ContentAnalyzer;
 
 use PHPUnit\Framework\TestCase;
 use SEOForKorean\Modules\ContentAnalyzer\Content_Analyzer;
+use SEOForKorean\Morphology\Morphology_Client;
 
 final class Content_Analyzer_Test extends TestCase {
 
 	private Content_Analyzer $analyzer;
 
 	protected function setUp(): void {
+		// No morphology client — exercises the in-PHP regex path.
 		$this->analyzer = new Content_Analyzer();
 	}
 
@@ -210,6 +212,79 @@ final class Content_Analyzer_Test extends TestCase {
 	public function test_ascii_slug_passes(): void {
 		$result = $this->analyzer->analyze( [ 'slug' => 'wordpress-guide' ] );
 		$check  = $this->find_check( $result, 'slug_quality' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	/* ----- Morphology gateway integration ----- */
+
+	public function test_morphology_client_overrides_local_count(): void {
+		$stub = new class() extends Morphology_Client {
+			public function is_available(): bool {
+				return true;
+			}
+			public function keyword_contains( string $text, string $keyword ): ?array {
+				// Pretend the gateway found 7 matches regardless of input.
+				return [ 'count' => 7, 'matches' => array_fill( 0, 7, $keyword ) ];
+			}
+		};
+
+		$analyzer = new Content_Analyzer( $stub );
+		$result   = $analyzer->analyze(
+			[
+				'title'         => '워드프레스 가이드',
+				'content'       => '<p>본문에 키워드 없음</p>',
+				'focus_keyword' => '워드프레스',
+			]
+		);
+		$check = $this->find_check( $result, 'focus_keyword_in_content' );
+		self::assertSame( 'pass', $check['status'] );
+		self::assertStringContainsString( '7회', $check['message'] );
+	}
+
+	public function test_morphology_client_null_response_falls_back_to_regex(): void {
+		$stub = new class() extends Morphology_Client {
+			public function is_available(): bool {
+				return true;
+			}
+			public function keyword_contains( string $text, string $keyword ): ?array {
+				// Simulate gateway error mid-call (network timeout, 500, etc).
+				return null;
+			}
+		};
+
+		$analyzer = new Content_Analyzer( $stub );
+		$result   = $analyzer->analyze(
+			[
+				'title'         => '워드프레스 가이드',
+				'content'       => '<p>워드프레스를 사용합니다. 워드프레스의 장점.</p>',
+				'focus_keyword' => '워드프레스',
+			]
+		);
+		$check = $this->find_check( $result, 'focus_keyword_in_content' );
+		// Local regex still finds the two particle-suffixed occurrences.
+		self::assertSame( 'pass', $check['status'] );
+		self::assertStringContainsString( '2회', $check['message'] );
+	}
+
+	public function test_unavailable_morphology_client_skips_gateway_silently(): void {
+		$stub = new class() extends Morphology_Client {
+			public function is_available(): bool {
+				return false;
+			}
+			public function keyword_contains( string $text, string $keyword ): ?array {
+				self::fail( 'keyword_contains should not be called when client is unavailable' );
+			}
+		};
+
+		$analyzer = new Content_Analyzer( $stub );
+		$result   = $analyzer->analyze(
+			[
+				'title'         => '워드프레스 가이드',
+				'content'       => '<p>워드프레스를 씁니다.</p>',
+				'focus_keyword' => '워드프레스',
+			]
+		);
+		$check = $this->find_check( $result, 'focus_keyword_in_title' );
 		self::assertSame( 'pass', $check['status'] );
 	}
 
