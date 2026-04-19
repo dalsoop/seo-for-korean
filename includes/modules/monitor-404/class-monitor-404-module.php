@@ -52,6 +52,46 @@ final class Monitor_404_Module {
 	public function boot(): void {
 		// After Redirections (priority 1) — by now WP knows it's a 404.
 		add_action( 'template_redirect', [ $this, 'maybe_log' ], 99 );
+		add_action( 'sfk/rest_init', [ $this, 'register_routes' ] );
+	}
+
+	public function register_routes(): void {
+		register_rest_route(
+			'seo-for-korean/v1',
+			'/404-log',
+			[
+				[
+					'methods'             => 'GET',
+					'callback'            => [ $this, 'rest_get' ],
+					'permission_callback' => static fn (): bool => Helper::has_cap( 'manage_options' ),
+				],
+				[
+					'methods'             => 'DELETE',
+					'callback'            => [ $this, 'rest_clear' ],
+					'permission_callback' => static fn (): bool => Helper::has_cap( 'manage_options' ),
+				],
+			]
+		);
+	}
+
+	public function rest_get( \WP_REST_Request $request ): \WP_REST_Response {
+		$log = self::get_log();
+		$out = [];
+		foreach ( $log as $path => $entry ) {
+			$out[] = [
+				'path'    => (string) $path,
+				'count'   => (int) ( $entry['count'] ?? 0 ),
+				'first'   => (int) ( $entry['first'] ?? 0 ),
+				'last'    => (int) ( $entry['last'] ?? 0 ),
+				'referer' => (string) ( $entry['referer'] ?? '' ),
+			];
+		}
+		return new \WP_REST_Response( $out, 200 );
+	}
+
+	public function rest_clear( \WP_REST_Request $request ): \WP_REST_Response {
+		self::clear_log();
+		return new \WP_REST_Response( [ 'ok' => true ], 200 );
 	}
 
 	public function maybe_log(): void {

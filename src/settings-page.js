@@ -13,6 +13,7 @@ import {
 	ToggleControl,
 	TextControl,
 	TextareaControl,
+	SelectControl,
 	Button,
 	Notice,
 	Spinner,
@@ -124,6 +125,8 @@ const App = () => {
 					tabs={ [
 						{ name: 'modules', title: __( 'Modules', 'seo-for-korean' ) },
 						{ name: 'templates', title: __( 'Templates', 'seo-for-korean' ) },
+						{ name: 'redirections', title: __( 'Redirections', 'seo-for-korean' ) },
+						{ name: 'log404', title: __( '404 Log', 'seo-for-korean' ) },
 						{ name: 'naver', title: __( 'Naver', 'seo-for-korean' ) },
 					] }
 				>
@@ -133,6 +136,12 @@ const App = () => {
 						}
 						if ( tab.name === 'templates' ) {
 							return <TemplatesTab settings={ settings } update={ update } />;
+						}
+						if ( tab.name === 'redirections' ) {
+							return <RedirectionsTab settings={ settings } update={ update } />;
+						}
+						if ( tab.name === 'log404' ) {
+							return <Log404Tab update={ update } settings={ settings } />;
 						}
 						if ( tab.name === 'naver' ) {
 							return <NaverTab settings={ settings } update={ update } />;
@@ -206,6 +215,224 @@ const TemplatesTab = ( { settings, update } ) => {
 					</div>
 				</BaseControl>
 			) ) }
+		</div>
+	);
+};
+
+const RedirectionsTab = ( { settings, update } ) => {
+	const rules = Array.isArray( settings.redirects ) ? settings.redirects : [];
+	const [ draft, setDraft ] = useState( {
+		from: '',
+		to: '',
+		type: 'exact',
+		status: 301,
+		enabled: true,
+	} );
+
+	const addRule = () => {
+		if ( ! draft.from || ! draft.to ) {
+			return;
+		}
+		update( 'redirects', [ ...rules, { ...draft } ] );
+		setDraft( { from: '', to: '', type: 'exact', status: 301, enabled: true } );
+	};
+
+	const removeRule = ( index ) => {
+		update( 'redirects', rules.filter( ( _, i ) => i !== index ) );
+	};
+
+	const toggleRule = ( index, enabled ) => {
+		update(
+			'redirects',
+			rules.map( ( r, i ) => ( i === index ? { ...r, enabled } : r ) )
+		);
+	};
+
+	return (
+		<div style={ { padding: '8px 0' } }>
+			<p style={ { color: '#475569', fontSize: 12 } }>
+				{ __( '패턴 매칭 기반 URL 리다이렉트. exact (정확히 일치) / prefix (앞부분 일치, 뒷부분 보존) / regex (preg_replace 스타일).', 'seo-for-korean' ) }
+			</p>
+
+			<div style={ { display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr auto', gap: 8, alignItems: 'flex-end', marginBottom: 12 } }>
+				<TextControl
+					label={ __( 'From', 'seo-for-korean' ) }
+					value={ draft.from }
+					onChange={ ( v ) => setDraft( { ...draft, from: v } ) }
+					placeholder="/old-page"
+				/>
+				<TextControl
+					label={ __( 'To', 'seo-for-korean' ) }
+					value={ draft.to }
+					onChange={ ( v ) => setDraft( { ...draft, to: v } ) }
+					placeholder="/new-page"
+				/>
+				<SelectControl
+					label={ __( 'Type', 'seo-for-korean' ) }
+					value={ draft.type }
+					options={ [
+						{ value: 'exact', label: 'exact' },
+						{ value: 'prefix', label: 'prefix' },
+						{ value: 'regex', label: 'regex' },
+					] }
+					onChange={ ( v ) => setDraft( { ...draft, type: v } ) }
+				/>
+				<SelectControl
+					label={ __( 'Status', 'seo-for-korean' ) }
+					value={ String( draft.status ) }
+					options={ [
+						{ value: '301', label: '301' },
+						{ value: '302', label: '302' },
+						{ value: '307', label: '307' },
+						{ value: '308', label: '308' },
+						{ value: '410', label: '410 (Gone)' },
+					] }
+					onChange={ ( v ) => setDraft( { ...draft, status: parseInt( v, 10 ) } ) }
+				/>
+				<Button variant="secondary" onClick={ addRule } disabled={ ! draft.from || ! draft.to }>
+					{ __( '추가', 'seo-for-korean' ) }
+				</Button>
+			</div>
+
+			{ rules.length === 0 && (
+				<p style={ { color: '#94a3b8' } }>{ __( '아직 리다이렉트 규칙이 없습니다.', 'seo-for-korean' ) }</p>
+			) }
+
+			{ rules.length > 0 && (
+				<table style={ { width: '100%', borderCollapse: 'collapse', fontSize: 13 } }>
+					<thead>
+						<tr style={ { borderBottom: '2px solid #e2e8f0', textAlign: 'left' } }>
+							<th style={ { padding: 6 } }>{ __( '활성', 'seo-for-korean' ) }</th>
+							<th style={ { padding: 6 } }>From</th>
+							<th style={ { padding: 6 } }>To</th>
+							<th style={ { padding: 6 } }>Type</th>
+							<th style={ { padding: 6 } }>Status</th>
+							<th style={ { padding: 6 } }></th>
+						</tr>
+					</thead>
+					<tbody>
+						{ rules.map( ( r, i ) => (
+							<tr key={ i } style={ { borderBottom: '1px solid #f1f5f9' } }>
+								<td style={ { padding: 6 } }>
+									<ToggleControl
+										__nextHasNoMarginBottom
+										checked={ r.enabled !== false }
+										onChange={ ( c ) => toggleRule( i, c ) }
+									/>
+								</td>
+								<td style={ { padding: 6, fontFamily: 'monospace' } }>{ r.from }</td>
+								<td style={ { padding: 6, fontFamily: 'monospace' } }>{ r.to }</td>
+								<td style={ { padding: 6 } }>{ r.type }</td>
+								<td style={ { padding: 6 } }>{ r.status || 301 }</td>
+								<td style={ { padding: 6 } }>
+									<Button variant="link" isDestructive onClick={ () => removeRule( i ) }>
+										{ __( '삭제', 'seo-for-korean' ) }
+									</Button>
+								</td>
+							</tr>
+						) ) }
+					</tbody>
+				</table>
+			) }
+		</div>
+	);
+};
+
+const Log404Tab = ( { settings, update } ) => {
+	const [ log, setLog ] = useState( null );
+	const [ loading, setLoading ] = useState( true );
+
+	const reload = () => {
+		setLoading( true );
+		apiFetch( { path: '/seo-for-korean/v1/404-log' } )
+			.then( ( res ) => {
+				setLog( Array.isArray( res ) ? res : [] );
+				setLoading( false );
+			} )
+			.catch( () => {
+				setLog( [] );
+				setLoading( false );
+			} );
+	};
+
+	useEffect( reload, [] );
+
+	const clear = () => {
+		if ( ! window.confirm( __( '404 로그를 모두 지우시겠습니까?', 'seo-for-korean' ) ) ) {
+			return;
+		}
+		apiFetch( { path: '/seo-for-korean/v1/404-log', method: 'DELETE' } ).then( reload );
+	};
+
+	const promoteToRedirect = ( path ) => {
+		const rules = Array.isArray( settings.redirects ) ? settings.redirects : [];
+		update( 'redirects', [
+			...rules,
+			{ from: path, to: '/', type: 'exact', status: 301, enabled: true },
+		] );
+		window.alert( __( 'Redirections 탭에서 To 값을 채운 뒤 저장하세요.', 'seo-for-korean' ) );
+	};
+
+	if ( loading ) {
+		return <Spinner />;
+	}
+
+	return (
+		<div style={ { padding: '8px 0' } }>
+			<div style={ { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } }>
+				<p style={ { color: '#475569', fontSize: 12, margin: 0 } }>
+					{ __( '404 발생 URL 상위 50건. 항목을 리다이렉트로 승격할 수 있습니다.', 'seo-for-korean' ) }
+				</p>
+				<Button variant="secondary" onClick={ reload } size="small">
+					{ __( '새로고침', 'seo-for-korean' ) }
+				</Button>
+			</div>
+
+			{ log.length === 0 && (
+				<p style={ { color: '#94a3b8' } }>{ __( '404 로그가 비어 있습니다.', 'seo-for-korean' ) }</p>
+			) }
+
+			{ log.length > 0 && (
+				<>
+					<table style={ { width: '100%', borderCollapse: 'collapse', fontSize: 13 } }>
+						<thead>
+							<tr style={ { borderBottom: '2px solid #e2e8f0', textAlign: 'left' } }>
+								<th style={ { padding: 6 } }>Path</th>
+								<th style={ { padding: 6 } }>Hits</th>
+								<th style={ { padding: 6 } }>Last</th>
+								<th style={ { padding: 6 } }>Referer</th>
+								<th style={ { padding: 6 } }></th>
+							</tr>
+						</thead>
+						<tbody>
+							{ log.map( ( e, i ) => (
+								<tr key={ i } style={ { borderBottom: '1px solid #f1f5f9' } }>
+									<td style={ { padding: 6, fontFamily: 'monospace', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }>
+										{ e.path }
+									</td>
+									<td style={ { padding: 6 } }>{ e.count }</td>
+									<td style={ { padding: 6 } }>
+										{ e.last ? new Date( e.last * 1000 ).toLocaleString() : '-' }
+									</td>
+									<td style={ { padding: 6, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11, color: '#64748b' } }>
+										{ e.referer || '-' }
+									</td>
+									<td style={ { padding: 6 } }>
+										<Button variant="link" onClick={ () => promoteToRedirect( e.path ) }>
+											{ __( '리다이렉트', 'seo-for-korean' ) }
+										</Button>
+									</td>
+								</tr>
+							) ) }
+						</tbody>
+					</table>
+					<div style={ { marginTop: 12, textAlign: 'right' } }>
+						<Button variant="link" isDestructive onClick={ clear }>
+							{ __( '로그 비우기', 'seo-for-korean' ) }
+						</Button>
+					</div>
+				</>
+			) }
 		</div>
 	);
 };

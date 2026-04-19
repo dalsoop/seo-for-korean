@@ -4,7 +4,7 @@ Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,11 @@ V1 has no admin settings page — power-user configuration is via filter hooks. 
 
 == Changelog ==
 
+= 0.3.0 =
+* Settings UI: new Redirections tab — add/remove/toggle redirect rules from the admin (no more code-only configuration).
+* Settings UI: new 404 Log tab — see the top 50 requested-but-missing URLs sorted by hit count, promote any entry to a redirect rule with one click.
+* New REST endpoints: GET / DELETE /seo-for-korean/v1/404-log.
+
 = 0.2.0 =
 * New: Settings UI under Settings → SEO for Korean (React-based, 3 tabs: Modules / Templates / Naver).
 * Module on/off toggles surface in admin instead of code-only.
@@ -80,6 +85,9 @@ V1 has no admin settings page — power-user configuration is via filter hooks. 
 * Korean-specific: 해요체/합쇼체 consistency, transition words, 한자 ratio, informal text, passive voice, particle-aware keyword matching.
 
 == Upgrade Notice ==
+
+= 0.3.0 =
+Adds Redirections + 404 Log admin tabs. No breaking changes.
 
 = 0.2.0 =
 Adds admin Settings UI. No breaking changes — existing configurations carry over.
