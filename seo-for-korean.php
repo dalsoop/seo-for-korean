@@ -3,7 +3,7 @@
  * Plugin Name:       SEO for Korean
  * Plugin URI:        https://github.com/dalsoop/seo-for-korean
  * Description:       Korean WordPress SEO. Naver-aware, AI-assisted, GPL.
- * Version:           0.3.6
+ * Version:           0.3.7
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Dalsoop
@@ -20,7 +20,7 @@ declare( strict_types=1 );
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SFK_VERSION', '0.3.6' );
+define( 'SFK_VERSION', '0.3.7' );
 define( 'SFK_FILE', __FILE__ );
 define( 'SFK_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SFK_URL', plugin_dir_url( __FILE__ ) );

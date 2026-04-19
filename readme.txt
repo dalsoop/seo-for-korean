@@ -4,7 +4,7 @@ Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.3.6
+Stable tag: 0.3.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,10 @@ No, by default. An optional morphology gateway can be configured for Korean keyw
 V1 has no admin settings page — power-user configuration is via filter hooks. A React-based admin page is on the roadmap for V2.
 
 == Changelog ==
+
+= 0.3.7 =
+* Fix: title templates no longer render a dangling separator (e.g. '프렐릭 블로그 \|' on the home page when sitedesc is empty).
+* Fix: %category% / %tag% variables now resolve in archive contexts via get_queried_object — previously only filled when a single post was rendered.
 
 = 0.3.6 =
 * Fix: HowTo schema not detected on real posts — file class-howto-schema.php renamed to class-how-to-schema.php so the autoloader\'s kebab transform of HowTo_Schema (how-to-schema) finds it.

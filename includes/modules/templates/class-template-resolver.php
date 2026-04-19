@@ -40,7 +40,8 @@ final class Template_Resolver {
 			return '';
 		}
 
-		$vars = $this->variables( $post );
+		$vars      = $this->variables( $post );
+		$separator = (string) ( $vars['separator'] ?? '' );
 
 		$out = (string) preg_replace_callback(
 			'/%([a-z_]+)%/i',
@@ -51,7 +52,14 @@ final class Template_Resolver {
 			$template
 		);
 
-		// Collapse the double-spaces that show up when a variable resolves to ''.
+		// Drop dangling separator chars when the adjacent variable resolved
+		// to empty. `'프렐릭 블로그 |'` and `'| 프렐릭 블로그'` should
+		// just be `'프렐릭 블로그'`.
+		if ( $separator !== '' ) {
+			$sep = preg_quote( $separator, '/' );
+			$out = (string) preg_replace( '/(?:^|\s)' . $sep . '(?=\s|$)/', ' ', $out );
+		}
+
 		return trim( (string) preg_replace( '/\s+/', ' ', $out ) );
 	}
 
@@ -73,6 +81,17 @@ final class Template_Resolver {
 			'author'       => '',
 			'focuskw'      => '',
 		];
+
+		// Archive contexts (category / tag) — no current post, but we
+		// can still surface the term name via the queried object.
+		$queried = function_exists( 'get_queried_object' ) ? get_queried_object() : null;
+		if ( $queried instanceof \WP_Term ) {
+			if ( $queried->taxonomy === 'category' ) {
+				$vars['category'] = $queried->name;
+			} elseif ( $queried->taxonomy === 'post_tag' ) {
+				$vars['tag'] = $queried->name;
+			}
+		}
 
 		if ( $post instanceof \WP_Post ) {
 			$vars['title']    = (string) get_the_title( $post );
