@@ -52,15 +52,18 @@ final class Template_Resolver {
 			$template
 		);
 
-		// Drop dangling separator chars when the adjacent variable resolved
-		// to empty. `'프렐릭 블로그 |'` and `'| 프렐릭 블로그'` should
-		// just be `'프렐릭 블로그'`.
+		$out = trim( (string) preg_replace( '/\s+/', ' ', $out ) );
+
+		// Drop dangling separator chars at the very start or end when an
+		// adjacent variable resolved to empty. Internal separators stay
+		// (so '인프라 | 프렐릭 블로그' isn't stripped to '인프라 프렐릭 블로그').
 		if ( $separator !== '' ) {
 			$sep = preg_quote( $separator, '/' );
-			$out = (string) preg_replace( '/(?:^|\s)' . $sep . '(?=\s|$)/', ' ', $out );
+			$out = (string) preg_replace( '/^\s*(?:' . $sep . '\s*)+/', '', $out );
+			$out = (string) preg_replace( '/(?:\s*' . $sep . ')+\s*$/', '', $out );
 		}
 
-		return trim( (string) preg_replace( '/\s+/', ' ', $out ) );
+		return trim( $out );
 	}
 
 	/**
