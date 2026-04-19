@@ -32,7 +32,6 @@ defined( 'ABSPATH' ) || exit;
 final class Sitemap_Module {
 
 	private const QUERY_VAR = 'sfk_sitemap';
-	private const REWRITE   = '^sitemap(?:-([a-z0-9_-]+))?\.xml$';
 	private const MAX_URLS  = 1000;
 
 	public function boot(): void {
@@ -65,7 +64,20 @@ final class Sitemap_Module {
 	}
 
 	public function add_rewrite(): void {
-		add_rewrite_rule( self::REWRITE, 'index.php?' . self::QUERY_VAR . '=$matches[1]', 'top' );
+		// Index — bare /sitemap.xml.
+		add_rewrite_rule( '^sitemap\.xml$', 'index.php?' . self::QUERY_VAR . '=index', 'top' );
+
+		// One specific rewrite per provider so other modules can claim
+		// /sitemap-naver.xml or /sitemap-news.xml without colliding with a
+		// broader catch-all from this module.
+		foreach ( array_keys( $this->providers() ) as $slug ) {
+			$slug_pattern = preg_quote( (string) $slug, '#' );
+			add_rewrite_rule(
+				"^sitemap-{$slug_pattern}\\.xml\$",
+				'index.php?' . self::QUERY_VAR . '=' . rawurlencode( (string) $slug ),
+				'top'
+			);
+		}
 	}
 
 	/**
@@ -90,7 +102,7 @@ final class Sitemap_Module {
 		header( 'X-Robots-Tag: noindex, follow', true );
 
 		$slug = (string) $slug;
-		if ( $slug === '' ) {
+		if ( $slug === 'index' || $slug === '' ) {
 			echo $this->render_index(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			exit;
 		}
