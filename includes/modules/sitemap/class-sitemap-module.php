@@ -41,7 +41,27 @@ final class Sitemap_Module {
 
 		add_action( 'init', [ $this, 'add_rewrite' ] );
 		add_filter( 'query_vars', [ $this, 'add_query_var' ] );
-		add_action( 'template_redirect', [ $this, 'maybe_render' ] );
+		// Run before canonical redirect (default priority 10) so we don't
+		// get bumped to /sitemap.xml/ for a URL that intentionally has no
+		// trailing slash.
+		add_action( 'template_redirect', [ $this, 'maybe_render' ], 1 );
+		add_filter( 'redirect_canonical', [ $this, 'short_circuit_canonical' ], 10, 2 );
+	}
+
+	/**
+	 * Tell WP not to canonical-redirect any URL that's about to render
+	 * one of our sitemaps. Without this, /sitemap.xml gets bumped to
+	 * /sitemap.xml/ (search engines grumble).
+	 *
+	 * @param string|false $redirect_url The redirect WP wanted to do.
+	 * @return string|false The same value, or false to cancel.
+	 */
+	public function short_circuit_canonical( $redirect_url, string $requested_url ) {
+		$slug = get_query_var( self::QUERY_VAR, null );
+		if ( $slug !== null && $slug !== false ) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	public function add_rewrite(): void {

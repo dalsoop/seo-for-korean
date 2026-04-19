@@ -30,7 +30,15 @@ final class Naver_Sitemap_Module {
 	public function boot(): void {
 		add_action( 'init', [ $this, 'add_rewrite' ] );
 		add_filter( 'query_vars', [ $this, 'add_query_var' ] );
-		add_action( 'template_redirect', [ $this, 'maybe_render' ] );
+		add_action( 'template_redirect', [ $this, 'maybe_render' ], 1 );
+		add_filter( 'redirect_canonical', [ $this, 'short_circuit_canonical' ], 10, 2 );
+	}
+
+	public function short_circuit_canonical( $redirect_url, string $requested_url ) {
+		if ( get_query_var( self::QUERY_VAR ) === 'naver' ) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	public function add_rewrite(): void {
