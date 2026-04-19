@@ -4,7 +4,7 @@ Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.3.10
+Stable tag: 0.3.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,9 @@ No, by default. An optional morphology gateway can be configured for Korean keyw
 V1 has no admin settings page — power-user configuration is via filter hooks. A React-based admin page is on the roadmap for V2.
 
 == Changelog ==
+
+= 0.3.11 =
+* Fix: runtime version migration. Activation hook does not re-fire on plugin upgrade-via-file-replacement, so v0.3.10\'s activation-time version stamp never ran on existing installs. Now plugins_loaded checks every request and updates sfk_settings.version when it lags SFK_VERSION (one-time DB write per upgrade).
 
 = 0.3.10 =
 * Fix: sfk_settings.version drift on plugin upgrade — activation now stamps the live SFK_VERSION while preserving user-modified keys (modules toggled, templates edited, redirects added).

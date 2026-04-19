@@ -26,11 +26,34 @@ final class Plugin {
 	}
 
 	public function boot(): void {
+		add_action( 'plugins_loaded', [ $this, 'maybe_migrate' ], 5 );
 		add_action( 'plugins_loaded', [ $this, 'load_textdomain' ] );
 		add_action( 'init', [ $this, 'register_modules' ], 5 );
 		add_action( 'init', [ $this, 'maybe_flush_rewrite' ], 9999 );
 		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 		add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_editor_assets' ] );
+	}
+
+	/**
+	 * Runtime migration safety net.
+	 *
+	 * Activation hook only fires on first activate (and on full
+	 * deactivate/reactivate), but plugin upgrades via WP admin or
+	 * `wp plugin install --force` replace the files without re-firing
+	 * activation. So sfk_settings.version drifts: still says the value
+	 * that was active on first install, even on a freshly-upgraded site.
+	 *
+	 * Runs once per request; no DB write when versions already match.
+	 */
+	public function maybe_migrate(): void {
+		$settings        = (array) get_option( 'sfk_settings', [] );
+		$stored_version  = (string) ( $settings['version'] ?? '0.0.0' );
+		if ( version_compare( $stored_version, SFK_VERSION, '>=' ) ) {
+			return;
+		}
+		// Future: branch on $stored_version for actual schema migrations.
+		$settings['version'] = SFK_VERSION;
+		update_option( 'sfk_settings', $settings );
 	}
 
 	public function load_textdomain(): void {
