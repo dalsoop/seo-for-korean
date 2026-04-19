@@ -24,6 +24,8 @@ namespace SEOForKorean\Modules\Schema;
 
 use SEOForKorean\Modules\Schema\Schemas\Article_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Breadcrumb_Schema;
+use SEOForKorean\Modules\Schema\Schemas\FAQ_Schema;
+use SEOForKorean\Modules\Schema\Schemas\HowTo_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Organization_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Person_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Website_Schema;
@@ -52,6 +54,8 @@ final class Schema_Module {
 				Person_Schema::class,
 				Article_Schema::class,
 				Breadcrumb_Schema::class,
+				FAQ_Schema::class,
+				HowTo_Schema::class,
 			]
 		);
 
