@@ -91,9 +91,33 @@ final class Schema_Module {
 			'@graph'   => $graph,
 		];
 
+		// HTML entities make sense inside HTML attributes (og:title="…"),
+		// but inside a JSON-LD payload they're noise — search engines see
+		// '&#8220;R&#038;D&#8221;' instead of '"R&D"'. WP's title/excerpt
+		// helpers return HTML-encoded text for safe page output, so we
+		// decode at the JSON boundary.
+		$payload = self::decode_html_entities( $payload );
+
 		printf(
 			"<script type=\"application/ld+json\">%s</script>\n",
 			wp_json_encode( $payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
 		);
+	}
+
+	/**
+	 * Recursively decode HTML entities in every string value of a payload.
+	 * Numeric values, booleans, arrays / objects: structure preserved.
+	 *
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	private static function decode_html_entities( $value ) {
+		if ( is_string( $value ) ) {
+			return html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		}
+		if ( is_array( $value ) ) {
+			return array_map( [ self::class, 'decode_html_entities' ], $value );
+		}
+		return $value;
 	}
 }

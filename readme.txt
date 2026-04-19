@@ -4,7 +4,7 @@ Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.3.8
+Stable tag: 0.3.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,9 @@ No, by default. An optional morphology gateway can be configured for Korean keyw
 V1 has no admin settings page — power-user configuration is via filter hooks. A React-based admin page is on the roadmap for V2.
 
 == Changelog ==
+
+= 0.3.9 =
+* Fix: JSON-LD payload was emitting HTML entities (= 0.3.8 =#8220; = 0.3.8 =#038; = 0.3.8 =#8221;) instead of decoded characters. Schema_Module now recursively decodes every string value at the JSON boundary so search engines see actual text.
 
 = 0.3.8 =
 * Fix: title separator-trim regex was too greedy and ate the separator from middle of well-formed titles ("인프라 \| 프렐릭 블로그" became "인프라 프렐릭 블로그"). Now only trims leading/trailing.
