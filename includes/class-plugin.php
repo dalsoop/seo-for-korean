@@ -59,6 +59,7 @@ final class Plugin {
 				'templates'        => Modules\Templates\Templates_Module::class,
 				'images'           => Modules\Images\Images_Module::class,
 				'redirections'     => Modules\Redirections\Redirections_Module::class,
+				'monitor-404'      => Modules\Monitor_404\Monitor_404_Module::class,
 				'naver-meta'       => Modules\NaverMeta\Naver_Meta_Module::class,
 				'naver-sitemap'    => Modules\NaverSitemap\Naver_Sitemap_Module::class,
 				'example'          => Modules\Example\Example_Module::class,
@@ -120,7 +121,7 @@ final class Plugin {
 			'sfk_settings',
 			[
 				'version'         => SFK_VERSION,
-				'enabled_modules' => [ 'content-analyzer', 'head-meta', 'schema', 'sitemap', 'templates', 'images', 'redirections', 'naver-meta', 'naver-sitemap' ],
+				'enabled_modules' => [ 'content-analyzer', 'head-meta', 'schema', 'sitemap', 'templates', 'images', 'redirections', 'monitor-404', 'naver-meta', 'naver-sitemap' ],
 				'templates'       => Modules\Templates\Templates_Module::defaults(),
 			]
 		);
