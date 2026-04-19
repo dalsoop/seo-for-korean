@@ -26,7 +26,28 @@ final class Content_Checks {
 			self::h2_count( $ctx ),
 			self::subheading_distribution( $ctx ),
 			self::has_lists( $ctx ),
+			self::headings_hierarchy( $ctx ),
 		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function headings_hierarchy( array $ctx ): array {
+		preg_match_all( '/<h([1-6])\b[^>]*>/i', (string) $ctx['content_html'], $m );
+		$levels = array_map( 'intval', (array) ( $m[1] ?? [] ) );
+		if ( $levels === [] ) {
+			return Helpers::result( 'headings_hierarchy', '헤딩 계층', 'na', '헤딩이 없습니다.', 5 );
+		}
+		$h1_count = count( array_filter( $levels, static fn ( $l ) => $l === 1 ) );
+		if ( $h1_count > 1 ) {
+			return Helpers::result( 'headings_hierarchy', '헤딩 계층', 'warning', "본문에 H1이 {$h1_count}개 있습니다. 보통 H1은 글 제목 1개만 사용합니다.", 5 );
+		}
+		for ( $i = 1; $i < count( $levels ); $i++ ) {
+			if ( $levels[ $i ] > $levels[ $i - 1 ] && $levels[ $i ] - $levels[ $i - 1 ] > 1 ) {
+				return Helpers::result( 'headings_hierarchy', '헤딩 계층', 'warning', "헤딩 단계가 건너뛰어졌습니다 (H{$levels[$i-1]} → H{$levels[$i]}). 접근성을 위해 단계별 사용 권장.", 5 );
+			}
+		}
+		$total = count( $levels );
+		return Helpers::result( 'headings_hierarchy', '헤딩 계층', 'pass', "헤딩 계층이 적절합니다 ({$total}개).", 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

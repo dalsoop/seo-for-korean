@@ -26,7 +26,20 @@ final class Title_Checks {
 			self::title_length( $ctx ),
 			self::title_keyword_position( $ctx, $matcher ),
 			self::title_starts_with_keyword( $ctx ),
+			self::title_has_numbers( $ctx ),
 		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function title_has_numbers( array $ctx ): array {
+		$title = (string) $ctx['title'];
+		if ( $title === '' ) {
+			return Helpers::result( 'title_has_numbers', '제목 숫자 포함', 'na', '', 5 );
+		}
+		if ( preg_match( '/[0-9]/', $title ) === 1 ) {
+			return Helpers::result( 'title_has_numbers', '제목 숫자 포함', 'pass', '제목에 숫자가 있어 클릭률 향상에 유리합니다.', 5 );
+		}
+		return Helpers::result( 'title_has_numbers', '제목 숫자 포함', 'warning', "제목에 숫자가 없습니다 (예: '5가지', '10가지'). 리스트형 제목은 클릭률이 높습니다.", 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

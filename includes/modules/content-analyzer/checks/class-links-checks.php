@@ -25,7 +25,27 @@ final class Links_Checks {
 			self::internal_links( $ctx ),
 			self::outbound_links( $ctx ),
 			self::nofollow_outbound( $ctx ),
+			self::excessive_links( $ctx ),
 		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function excessive_links( array $ctx ): array {
+		$internal = (int) ( $ctx['link_counts']['internal'] ?? 0 );
+		$outbound = (int) ( $ctx['link_counts']['outbound'] ?? 0 );
+		$total    = $internal + $outbound;
+		$len      = (int) $ctx['content_length'];
+		if ( $len < 300 ) {
+			return Helpers::result( 'excessive_links', '과도한 링크', 'na', '본문이 짧아 평가 생략.', 5 );
+		}
+		if ( $total === 0 ) {
+			return Helpers::result( 'excessive_links', '과도한 링크', 'na', '링크가 없습니다.', 5 );
+		}
+		$limit = max( 5, intdiv( $len, 100 ) );
+		if ( $total > $limit ) {
+			return Helpers::result( 'excessive_links', '과도한 링크', 'warning', "링크 {$total}개가 본문 {$len}자에 비해 많습니다 (약 {$limit}개 권장). 스팸으로 보일 수 있습니다.", 5 );
+		}
+		return Helpers::result( 'excessive_links', '과도한 링크', 'pass', "링크 {$total}개 (본문 {$len}자에 적절).", 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

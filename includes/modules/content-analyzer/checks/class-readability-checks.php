@@ -25,6 +25,7 @@ final class Readability_Checks {
 	private const HAEYO       = '해요|예요|이에요|에요|네요|어요|아요|거예요|이지요|지요|나요|ㄴ가요|는가요';
 	private const HAPSYO      = '합니다|입니다|습니다|됩니다|갑니다|옵니다|합니까|입니까|습니까|됩니까|십시오';
 	private const INFORMAL    = 'ㅋㅋ+|ㅎㅎ+|ㅠㅠ+|ㅜㅜ+|ㅇㅇ|ㄴㄴ|헐\b|대박\b|레알\b|개꿀\b|쩐다\b|굿굿';
+	private const PASSIVE     = '되었다|되었습니다|되었어요|된다|됩니다|돼요|받았다|받았습니다|받았어요|받는다|받습니다|당했다|당했습니다|당했어요|지었다|졌다|졌습니다|져요|져졌|되어졌|되어진|이루어졌|이루어진|만들어졌|만들어진|보여진다|보여졌다';
 
 	public static function run( array $ctx ): array {
 		return [
@@ -34,7 +35,29 @@ final class Readability_Checks {
 			self::ending_consistency( $ctx ),
 			self::hanja_ratio( $ctx ),
 			self::informal_text( $ctx ),
+			self::passive_voice( $ctx ),
 		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function passive_voice( array $ctx ): array {
+		$len = (int) $ctx['content_length'];
+		if ( $len < 200 ) {
+			return Helpers::result( 'passive_voice', '수동태 사용', 'na', '본문이 짧아 평가 생략.', 5 );
+		}
+		$text    = (string) $ctx['content_text'];
+		$passive = preg_match_all( '/(?:' . self::PASSIVE . ')[\s.!?。]/u', $text );
+		$passive = is_int( $passive ) ? $passive : 0;
+		$parts   = preg_split( '/[.!?。?]+\s*/u', $text ) ?: [];
+		$sentences = count( array_filter( array_map( 'trim', $parts ), static fn ( $s ) => $s !== '' ) );
+		if ( $sentences === 0 || $passive === 0 ) {
+			return Helpers::result( 'passive_voice', '수동태 사용', 'pass', '수동태 사용 적음.', 5 );
+		}
+		$ratio = (int) round( $passive / $sentences * 100 );
+		if ( $ratio > 30 ) {
+			return Helpers::result( 'passive_voice', '수동태 사용', 'warning', "수동태가 많습니다 ({$passive}회, 문장의 {$ratio}%). 능동태 위주 권장.", 5 );
+		}
+		return Helpers::result( 'passive_voice', '수동태 사용', 'pass', "수동태 사용 적절 ({$passive}회, {$ratio}%).", 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

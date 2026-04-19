@@ -29,7 +29,7 @@ final class Content_Analyzer_Test extends TestCase {
 		$result = $this->analyzer->analyze( [] );
 		self::assertLessThanOrEqual( 30, $result['score'], 'empty post should be poor' );
 		self::assertSame( 'poor', $result['grade'] );
-		self::assertCount( 30, $result['checks'] );
+		self::assertCount( 35, $result['checks'] );
 	}
 
 	public function test_well_formed_korean_post_scores_at_least_good(): void {
@@ -447,6 +447,29 @@ final class Content_Analyzer_Test extends TestCase {
 		);
 		$check = $this->find_check( $result, 'title_starts_with_keyword' );
 		self::assertSame( 'pass', $check['status'] );
+	}
+
+	public function test_passive_voice_high_warns(): void {
+		$body   = str_repeat(
+			'본 글은 작성되었습니다. 정보가 모아졌습니다. 결과가 도출되었습니다. '
+			. '데이터가 분석되었습니다. 보고서가 만들어졌습니다. ',
+			3
+		);
+		$result = $this->analyzer->analyze( [ 'content' => "<p>{$body}</p>" ] );
+		$check  = $this->find_check( $result, 'passive_voice' );
+		self::assertSame( 'warning', $check['status'] );
+	}
+
+	public function test_title_with_numbers_passes(): void {
+		$result = $this->analyzer->analyze( [ 'title' => '워드프레스 SEO 5가지 핵심 팁' ] );
+		$check  = $this->find_check( $result, 'title_has_numbers' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	public function test_skipped_heading_levels_warn(): void {
+		$result = $this->analyzer->analyze( [ 'content' => '<h2>섹션</h2><h4>건너뜀</h4>' ] );
+		$check  = $this->find_check( $result, 'headings_hierarchy' );
+		self::assertSame( 'warning', $check['status'] );
 	}
 
 	public function test_slug_underscore_warns(): void {
