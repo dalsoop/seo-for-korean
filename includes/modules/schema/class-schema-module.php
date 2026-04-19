@@ -24,11 +24,14 @@ namespace SEOForKorean\Modules\Schema;
 
 use SEOForKorean\Modules\Schema\Schemas\Article_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Breadcrumb_Schema;
+use SEOForKorean\Modules\Schema\Schemas\Event_Schema;
 use SEOForKorean\Modules\Schema\Schemas\FAQ_Schema;
 use SEOForKorean\Modules\Schema\Schemas\HowTo_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Organization_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Person_Schema;
+use SEOForKorean\Modules\Schema\Schemas\Recipe_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Review_Schema;
+use SEOForKorean\Modules\Schema\Schemas\Video_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Website_Schema;
 
 defined( 'ABSPATH' ) || exit;
@@ -58,6 +61,9 @@ final class Schema_Module {
 				FAQ_Schema::class,
 				HowTo_Schema::class,
 				Review_Schema::class,
+				Recipe_Schema::class,
+				Event_Schema::class,
+				Video_Schema::class,
 			]
 		);
 
