@@ -4,7 +4,7 @@ Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.3.1
+Stable tag: 0.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,9 @@ No, by default. An optional morphology gateway can be configured for Korean keyw
 V1 has no admin settings page — power-user configuration is via filter hooks. A React-based admin page is on the roadmap for V2.
 
 == Changelog ==
+
+= 0.3.2 =
+* Fix: /sitemap-naver.xml no longer 404s — query-var name collided with the comprehensive sitemap module (both used 'sfk_sitemap'). Naver-sitemap now uses 'sfk_naver_sm'.
 
 = 0.3.1 =
 * Fix: /sitemap.xml and /sitemap-naver.xml no longer 301-redirect to a trailing-slash variant — short-circuits WP canonical redirect for sitemap URLs.

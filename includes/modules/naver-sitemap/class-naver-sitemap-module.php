@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Naver_Sitemap_Module {
 
-	private const QUERY_VAR = 'sfk_sitemap';
+	private const QUERY_VAR = 'sfk_naver_sm';
 	private const REWRITE   = '^sitemap-naver\.xml$';
 
 	public function boot(): void {
