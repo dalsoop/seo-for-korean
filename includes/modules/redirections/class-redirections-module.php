@@ -86,9 +86,42 @@ final class Redirections_Module {
 				$target .= '?' . $parsed['query'];
 			}
 
+			// Loop guard: redirecting to a path that another active rule
+			// will redirect right back from — or to ourselves — is a
+			// configuration mistake. Don't fire; let WP serve the page
+			// normally so the loop never starts.
+			if ( $this->would_loop( $path, $target ) ) {
+				return;
+			}
+
 			wp_safe_redirect( $target, $status, 'SEO for Korean' );
 			exit;
 		}
+	}
+
+	/**
+	 * Returns true when redirecting from $from to $to would create a loop:
+	 *   - target equals source (self-redirect)
+	 *   - target itself is a `from` of any other active rule
+	 *
+	 * Doesn't walk transitive chains (A→B→C→A) — that's user error and
+	 * catching all transitive cycles is expensive at request time. The
+	 * direct cases (A→A, A→B where B→A) cover 95% of accidents.
+	 */
+	private function would_loop( string $from, string $target ): bool {
+		$target_path = (string) ( wp_parse_url( $target )['path'] ?? $target );
+		if ( $target_path === $from ) {
+			return true;
+		}
+		foreach ( $this->rules() as $rule ) {
+			if ( empty( $rule['enabled'] ) && isset( $rule['enabled'] ) ) {
+				continue;
+			}
+			if ( ( $rule['from'] ?? '' ) === $target_path && ( $rule['to'] ?? '' ) === $from ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

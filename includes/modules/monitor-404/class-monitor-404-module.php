@@ -35,6 +35,7 @@ defined( 'ABSPATH' ) || exit;
 final class Monitor_404_Module {
 
 	private const MAX_ENTRIES = 50;
+	private const MAX_PATH_LENGTH = 200;
 
 	/** Skip these — they're bot probes, not real 404s worth fixing. */
 	private const IGNORE_PATTERNS = [
@@ -113,6 +114,13 @@ final class Monitor_404_Module {
 		$path   = (string) ( $parsed['path'] ?? '/' );
 		if ( $path === '/' || $path === '' ) {
 			return;
+		}
+
+		// Cap to keep the option from ballooning when scanners hit very long
+		// crafted URLs. WP option storage is single-row serialized — a few
+		// 4KB paths times 50 entries is enough to make autoload slow.
+		if ( strlen( $path ) > self::MAX_PATH_LENGTH ) {
+			$path = substr( $path, 0, self::MAX_PATH_LENGTH ) . '…';
 		}
 
 		// Filter out scanner noise.
