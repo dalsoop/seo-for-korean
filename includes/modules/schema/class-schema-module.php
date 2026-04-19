@@ -28,6 +28,7 @@ use SEOForKorean\Modules\Schema\Schemas\FAQ_Schema;
 use SEOForKorean\Modules\Schema\Schemas\HowTo_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Organization_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Person_Schema;
+use SEOForKorean\Modules\Schema\Schemas\Review_Schema;
 use SEOForKorean\Modules\Schema\Schemas\Website_Schema;
 
 defined( 'ABSPATH' ) || exit;
@@ -56,6 +57,7 @@ final class Schema_Module {
 				Breadcrumb_Schema::class,
 				FAQ_Schema::class,
 				HowTo_Schema::class,
+				Review_Schema::class,
 			]
 		);
 
