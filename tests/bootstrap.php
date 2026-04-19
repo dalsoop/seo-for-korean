@@ -43,7 +43,8 @@ spl_autoload_register(
 		$class_nm = array_pop( $parts );
 
 		$kebab = static function ( string $s ): string {
-			$s = (string) preg_replace( '/(?<!^)([A-Z])/', '-$1', $s );
+			$s = (string) preg_replace( '/([a-z])([A-Z])/', '$1-$2', $s );
+			$s = (string) preg_replace( '/([A-Z]+)([A-Z][a-z])/', '$1-$2', $s );
 			$s = str_replace( '_', '-', $s );
 			$s = (string) preg_replace( '/-+/', '-', $s );
 			return strtolower( $s );

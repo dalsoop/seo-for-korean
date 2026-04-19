@@ -3,7 +3,7 @@
  * Plugin Name:       SEO for Korean
  * Plugin URI:        https://github.com/dalsoop/seo-for-korean
  * Description:       Korean WordPress SEO. Naver-aware, AI-assisted, GPL.
- * Version:           0.3.4
+ * Version:           0.3.5
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Dalsoop
@@ -20,7 +20,7 @@ declare( strict_types=1 );
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SFK_VERSION', '0.3.4' );
+define( 'SFK_VERSION', '0.3.5' );
 define( 'SFK_FILE', __FILE__ );
 define( 'SFK_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SFK_URL', plugin_dir_url( __FILE__ ) );
@@ -69,8 +69,15 @@ spl_autoload_register(
 		$class_nm = array_pop( $parts );
 
 		// PascalCase or Snake_Case → kebab-case for filesystem paths.
+		// Two-pass split keeps trailing/leading acronyms together:
+		//   SettingsUI    → settings-ui     (not settings-u-i)
+		//   XMLHttpFoo    → xml-http-foo
+		//   Naver_Meta    → naver-meta
 		$kebab = static function ( string $s ): string {
-			$s = (string) preg_replace( '/(?<!^)([A-Z])/', '-$1', $s );
+			// Boundary 1: lowercase → uppercase
+			$s = (string) preg_replace( '/([a-z])([A-Z])/', '$1-$2', $s );
+			// Boundary 2: uppercase-run → uppercase + lowercase (e.g., XMLHttp → XML-Http)
+			$s = (string) preg_replace( '/([A-Z]+)([A-Z][a-z])/', '$1-$2', $s );
 			$s = str_replace( '_', '-', $s );
 			$s = (string) preg_replace( '/-+/', '-', $s );
 			return strtolower( $s );

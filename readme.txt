@@ -4,7 +4,7 @@ Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.3.4
+Stable tag: 0.3.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,6 +67,9 @@ No, by default. An optional morphology gateway can be configured for Korean keyw
 V1 has no admin settings page — power-user configuration is via filter hooks. A React-based admin page is on the roadmap for V2.
 
 == Changelog ==
+
+= 0.3.5 =
+* Fix: settings-ui module autoload — kebab transform now keeps acronyms together (SettingsUI → settings-ui, was settings-u-i). Same fix in tests bootstrap.
 
 = 0.3.4 =
 * Fix: Article schema's wordCount now counts Korean tokens correctly (str_word_count is Latin-only).
