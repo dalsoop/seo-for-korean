@@ -17,7 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -26,7 +25,7 @@ jobs:
           coverage: none
 
       - name: Install JS deps
-        run: npm ci
+        run: npm install --no-fund --no-audit
 
       - name: Build editor-sidebar bundle
         run: npm run build
