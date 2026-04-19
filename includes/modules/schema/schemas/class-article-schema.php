@@ -36,17 +36,24 @@ final class Article_Schema {
 		$home    = home_url( '/' );
 		$url     = (string) get_permalink( $post );
 		$type    = self::resolve_type( $post );
-		$obj     = [
+		$obj = [
 			'@type'            => $type,
 			'@id'              => $url . '#article',
 			'mainEntityOfPage' => [ '@id' => $url . '#webpage' ],
 			'headline'         => self::headline( $post ),
 			'datePublished'    => mysql2date( 'c', $post->post_date_gmt, false ),
 			'dateModified'     => mysql2date( 'c', $post->post_modified_gmt, false ),
-			'author'           => [ '@id' => Person_Schema::author_id_url( (int) $post->post_author ) ],
 			'publisher'        => [ '@id' => $home . '#organization' ],
 			'inLanguage'       => str_replace( '_', '-', (string) get_locale() ),
 		];
+
+		// Only link an author when there's a real user behind it. Posts
+		// created via wp-cli without --user= end up as post_author=0,
+		// which would otherwise produce a dangling @id reference.
+		$author_id = (int) $post->post_author;
+		if ( $author_id > 0 && get_userdata( $author_id ) ) {
+			$obj['author'] = [ '@id' => Person_Schema::author_id_url( $author_id ) ];
+		}
 
 		$desc = self::description( $post );
 		if ( $desc !== '' ) {
@@ -176,7 +183,14 @@ final class Article_Schema {
 	}
 
 	private static function word_count( \WP_Post $post ): int {
-		$text = wp_strip_all_tags( (string) $post->post_content );
-		return mb_strlen( $text ) > 0 ? str_word_count( $text ) : 0;
+		$text = trim( wp_strip_all_tags( (string) $post->post_content ) );
+		if ( $text === '' ) {
+			return 0;
+		}
+		// str_word_count is Latin-only — counts zero on Korean. Split on
+		// any whitespace (Unicode-aware) so 어절 / English words / mixed
+		// text all count correctly.
+		$tokens = preg_split( '/\s+/u', $text );
+		return is_array( $tokens ) ? count( array_filter( $tokens ) ) : 0;
 	}
 }
