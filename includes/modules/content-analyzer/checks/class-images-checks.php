@@ -21,7 +21,28 @@ final class Images_Checks {
 	 * @return list<array{id: string, label: string, status: string, message: string, weight: int}>
 	 */
 	public static function run( array $ctx ): array {
-		return [ self::image_alt_coverage( $ctx ) ];
+		return [
+			self::image_alt_coverage( $ctx ),
+			self::image_density( $ctx ),
+		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function image_density( array $ctx ): array {
+		$len = (int) $ctx['content_length'];
+		if ( $len < 300 ) {
+			return Helpers::result( 'image_density', '이미지 밀도', 'na', '본문이 짧아 평가 생략.', 5 );
+		}
+		$count = preg_match_all( '/<img\b[^>]*>/i', (string) $ctx['content_html'] );
+		$count = is_int( $count ) ? $count : 0;
+		$recommended = max( 1, intdiv( $len, 600 ) );
+		if ( $count === 0 ) {
+			return Helpers::result( 'image_density', '이미지 밀도', 'warning', "이미지가 없습니다. 약 {$recommended}개 권장 ({$len}자 본문).", 5 );
+		}
+		if ( $count >= $recommended ) {
+			return Helpers::result( 'image_density', '이미지 밀도', 'pass', "이미지 {$count}개 (본문 {$len}자에 적절).", 5 );
+		}
+		return Helpers::result( 'image_density', '이미지 밀도', 'warning', "이미지 {$count}개. 본문 {$len}자에는 약 {$recommended}개 권장.", 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

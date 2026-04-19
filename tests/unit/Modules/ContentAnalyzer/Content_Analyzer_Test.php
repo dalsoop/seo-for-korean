@@ -29,7 +29,7 @@ final class Content_Analyzer_Test extends TestCase {
 		$result = $this->analyzer->analyze( [] );
 		self::assertLessThanOrEqual( 30, $result['score'], 'empty post should be poor' );
 		self::assertSame( 'poor', $result['grade'] );
-		self::assertCount( 18, $result['checks'] );
+		self::assertCount( 24, $result['checks'] );
 	}
 
 	public function test_well_formed_korean_post_scores_at_least_good(): void {
@@ -383,6 +383,43 @@ final class Content_Analyzer_Test extends TestCase {
 	public function test_short_paragraphs_pass(): void {
 		$result = $this->analyzer->analyze( [ 'content' => '<p>짧은 문단입니다.</p><p>또 다른 짧은 문단.</p>' ] );
 		$check  = $this->find_check( $result, 'paragraph_length' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	/* ----- Korean readability (new — distinctive) ----- */
+
+	public function test_ending_consistency_haeyo_passes(): void {
+		$body   = str_repeat(
+			'워드프레스는 정말 편리해요. 누구나 쉽게 쓸 수 있어요. 한국어 자료도 풍부해요. '
+			. '설치도 어렵지 않아요. 처음 시작하기 좋아요. 그래서 추천해요. ',
+			3
+		);
+		$result = $this->analyzer->analyze( [ 'content' => "<p>{$body}</p>" ] );
+		$check  = $this->find_check( $result, 'ending_consistency' );
+		self::assertSame( 'pass', $check['status'] );
+		self::assertStringContainsString( '해요체', $check['message'] );
+	}
+
+	public function test_ending_consistency_mixed_fails(): void {
+		$body   = str_repeat(
+			'워드프레스는 편리해요. 누구나 쓸 수 있습니다. 한국어 자료도 풍부합니다. '
+			. '설치는 쉬워요. 처음에는 좋아요. 추천합니다. 정말 좋습니다. ',
+			3
+		);
+		$result = $this->analyzer->analyze( [ 'content' => "<p>{$body}</p>" ] );
+		$check  = $this->find_check( $result, 'ending_consistency' );
+		self::assertContains( $check['status'], [ 'warning', 'fail' ] );
+	}
+
+	public function test_transition_words_pass(): void {
+		$body   = str_repeat(
+			'워드프레스는 매우 인기있는 시스템입니다. 따라서 많은 사람들이 사용합니다. '
+			. '그러나 처음에는 어려울 수 있습니다. 그래서 가이드가 필요합니다. '
+			. '또한 플러그인이 풍부합니다. 즉 확장성이 좋습니다. ',
+			2
+		);
+		$result = $this->analyzer->analyze( [ 'content' => "<p>{$body}</p>" ] );
+		$check  = $this->find_check( $result, 'transition_words' );
 		self::assertSame( 'pass', $check['status'] );
 	}
 

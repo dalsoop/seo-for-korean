@@ -11,6 +11,7 @@ declare( strict_types=1 );
 namespace SEOForKorean\Modules\ContentAnalyzer\Checks;
 
 use SEOForKorean\Modules\ContentAnalyzer\Helpers;
+use SEOForKorean\Modules\ContentAnalyzer\Keyword_Matcher;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,8 +21,35 @@ final class Title_Checks {
 	 * @param array<string, mixed> $ctx
 	 * @return list<array{id: string, label: string, status: string, message: string, weight: int}>
 	 */
-	public static function run( array $ctx ): array {
-		return [ self::title_length( $ctx ) ];
+	public static function run( array $ctx, Keyword_Matcher $matcher ): array {
+		return [
+			self::title_length( $ctx ),
+			self::title_keyword_position( $ctx, $matcher ),
+		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function title_keyword_position( array $ctx, Keyword_Matcher $matcher ): array {
+		$kw    = (string) $ctx['focus_keyword'];
+		$title = (string) $ctx['title'];
+		if ( $kw === '' || (int) $ctx['title_length'] === 0 ) {
+			return Helpers::result( 'title_keyword_position', '제목 내 키워드 위치', 'na', '', 5 );
+		}
+		$matches = $matcher->find( $title, $kw );
+		if ( $matches['count'] === 0 ) {
+			return Helpers::result( 'title_keyword_position', '제목 내 키워드 위치', 'fail', '제목에 키워드가 없습니다.', 5 );
+		}
+		// Find first occurrence position (in characters, not bytes).
+		$first_match = (string) ( $matches['matches'][0] ?? $kw );
+		$byte_pos    = mb_strpos( $title, $first_match );
+		if ( $byte_pos === false ) {
+			$byte_pos = 0;
+		}
+		$percent = (int) round( $byte_pos / mb_strlen( $title ) * 100 );
+		if ( $percent <= 30 ) {
+			return Helpers::result( 'title_keyword_position', '제목 내 키워드 위치', 'pass', "키워드가 제목 앞부분 ({$percent}%)에 있습니다.", 5 );
+		}
+		return Helpers::result( 'title_keyword_position', '제목 내 키워드 위치', 'warning', "키워드가 제목의 {$percent}% 위치에 있습니다. 앞쪽으로 옮겨보세요.", 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

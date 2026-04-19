@@ -47,7 +47,7 @@ final class Content_Analyzer {
 		$ctx = $this->normalize( $input );
 
 		$checks = array_merge(
-			Title_Checks::run( $ctx ),
+			Title_Checks::run( $ctx, $this->matcher ),
 			Meta_Checks::run( $ctx ),
 			Keywords_Checks::run( $ctx, $this->matcher ),
 			Content_Checks::run( $ctx ),

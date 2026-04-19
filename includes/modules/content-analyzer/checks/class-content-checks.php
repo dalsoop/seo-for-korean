@@ -21,7 +21,41 @@ final class Content_Checks {
 	 * @return list<array{id: string, label: string, status: string, message: string, weight: int}>
 	 */
 	public static function run( array $ctx ): array {
-		return [ self::content_length( $ctx ), self::h2_count( $ctx ) ];
+		return [
+			self::content_length( $ctx ),
+			self::h2_count( $ctx ),
+			self::subheading_distribution( $ctx ),
+			self::has_lists( $ctx ),
+		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function subheading_distribution( array $ctx ): array {
+		$len = (int) $ctx['content_length'];
+		if ( $len < 600 ) {
+			return Helpers::result( 'subheading_distribution', '헤딩 분포', 'na', '본문이 짧아 평가 생략.', 5 );
+		}
+		$h2 = preg_match_all( '/<h2\b[^>]*>/i', (string) $ctx['content_html'] );
+		$h2 = is_int( $h2 ) ? $h2 : 0;
+		if ( $h2 === 0 ) {
+			return Helpers::result( 'subheading_distribution', '헤딩 분포', 'warning', '헤딩이 없습니다.', 5 );
+		}
+		$avg = intdiv( $len, $h2 );
+		if ( $avg > 1500 ) {
+			return Helpers::result( 'subheading_distribution', '헤딩 분포', 'warning', "H2 사이 본문이 너무 깁니다 (평균 {$avg}자). 헤딩을 더 추가하세요.", 5 );
+		}
+		return Helpers::result( 'subheading_distribution', '헤딩 분포', 'pass', "헤딩 분포가 적절합니다 (H2 사이 평균 {$avg}자).", 5 );
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function has_lists( array $ctx ): array {
+		if ( (int) $ctx['content_length'] < 400 ) {
+			return Helpers::result( 'has_lists', '리스트 사용', 'na', '본문이 짧아 평가 생략.', 5 );
+		}
+		if ( preg_match( '/<(ul|ol)\b/i', (string) $ctx['content_html'] ) === 1 ) {
+			return Helpers::result( 'has_lists', '리스트 사용', 'pass', '본문에 리스트가 있습니다.', 5 );
+		}
+		return Helpers::result( 'has_lists', '리스트 사용', 'warning', '리스트(ul/ol)가 없습니다. 정보 정리에 활용해 보세요.', 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */
