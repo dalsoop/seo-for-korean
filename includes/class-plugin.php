@@ -117,15 +117,27 @@ final class Plugin {
 	}
 
 	public static function activate(): void {
-		// Defaults seed, capability registration, db migrations.
-		add_option(
-			'sfk_settings',
-			[
-				'version'         => SFK_VERSION,
-				'enabled_modules' => [ 'content-analyzer', 'head-meta', 'schema', 'sitemap', 'templates', 'images', 'redirections', 'monitor-404', 'settings-ui', 'naver-meta', 'naver-sitemap' ],
-				'templates'       => Modules\Templates\Templates_Module::defaults(),
-			]
-		);
+		$defaults = [
+			'version'         => SFK_VERSION,
+			'enabled_modules' => [ 'content-analyzer', 'head-meta', 'schema', 'sitemap', 'templates', 'images', 'redirections', 'monitor-404', 'settings-ui', 'naver-meta', 'naver-sitemap' ],
+			'templates'       => Modules\Templates\Templates_Module::defaults(),
+		];
+
+		// First-install: seed defaults wholesale.
+		// Upgrade: keep user-modified keys, fill any new defaults, ALWAYS
+		// stamp the live plugin version so future migrations can branch on it.
+		$existing = get_option( 'sfk_settings' );
+		if ( ! is_array( $existing ) ) {
+			update_option( 'sfk_settings', $defaults );
+		} else {
+			$merged            = $defaults;
+			foreach ( $existing as $key => $value ) {
+				$merged[ $key ] = $value;
+			}
+			$merged['version'] = SFK_VERSION;
+			update_option( 'sfk_settings', $merged );
+		}
+
 		update_option( 'sfk_needs_rewrite_flush', '1' );
 	}
 
