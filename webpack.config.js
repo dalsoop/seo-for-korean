@@ -4,5 +4,6 @@ module.exports = {
 	...defaultConfig,
 	entry: {
 		'editor-sidebar': './src/editor-sidebar.js',
+		'settings-page': './src/settings-page.js',
 	},
 };

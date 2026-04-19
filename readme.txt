@@ -4,7 +4,7 @@ Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,10 @@ V1 has no admin settings page — power-user configuration is via filter hooks. 
 
 == Changelog ==
 
+= 0.2.0 =
+* New: Settings UI under Settings → SEO for Korean (React-based, 3 tabs: Modules / Templates / Naver).
+* Module on/off toggles surface in admin instead of code-only.
+
 = 0.1.0 =
 * Initial release.
 * 10 modules: content-analyzer, head-meta, schema, sitemap, templates, images, redirections, monitor-404, naver-meta, naver-sitemap.
@@ -76,6 +80,9 @@ V1 has no admin settings page — power-user configuration is via filter hooks. 
 * Korean-specific: 해요체/합쇼체 consistency, transition words, 한자 ratio, informal text, passive voice, particle-aware keyword matching.
 
 == Upgrade Notice ==
+
+= 0.2.0 =
+Adds admin Settings UI. No breaking changes — existing configurations carry over.
 
 = 0.1.0 =
 Initial release.
