@@ -24,6 +24,7 @@ final class Readability_Checks {
 	private const TRANSITIONS = '그러나|그렇지만|하지만|반면|한편|따라서|그러므로|그래서|결국|결과적으로|예를\s?들어|구체적으로|말하자면|가령|또한|게다가|더불어|더욱이|즉|다시\s?말해|요컨대|우선|먼저|다음으로|마지막으로|끝으로|물론|사실|참고로|반대로|오히려|특히|즉시';
 	private const HAEYO       = '해요|예요|이에요|에요|네요|어요|아요|거예요|이지요|지요|나요|ㄴ가요|는가요';
 	private const HAPSYO      = '합니다|입니다|습니다|됩니다|갑니다|옵니다|합니까|입니까|습니까|됩니까|십시오';
+	private const INFORMAL    = 'ㅋㅋ+|ㅎㅎ+|ㅠㅠ+|ㅜㅜ+|ㅇㅇ|ㄴㄴ|헐\b|대박\b|레알\b|개꿀\b|쩐다\b|굿굿';
 
 	public static function run( array $ctx ): array {
 		return [
@@ -31,7 +32,46 @@ final class Readability_Checks {
 			self::sentence_length( $ctx ),
 			self::transition_words( $ctx ),
 			self::ending_consistency( $ctx ),
+			self::hanja_ratio( $ctx ),
+			self::informal_text( $ctx ),
 		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function hanja_ratio( array $ctx ): array {
+		$len = (int) $ctx['content_length'];
+		if ( $len < 200 ) {
+			return Helpers::result( 'hanja_ratio', '한자 사용', 'na', '본문이 짧아 평가 생략.', 5 );
+		}
+		$text  = (string) $ctx['content_text'];
+		$hanja = preg_match_all( '/[\x{4E00}-\x{9FFF}\x{3400}-\x{4DBF}]/u', $text );
+		$hanja = is_int( $hanja ) ? $hanja : 0;
+		if ( $hanja === 0 ) {
+			return Helpers::result( 'hanja_ratio', '한자 사용', 'pass', '한자 사용 없음 (한국어 독자에게 친화적).', 5 );
+		}
+		$ratio = $hanja / $len * 100.0;
+		$r     = number_format( $ratio, 1 );
+		if ( $ratio > 5.0 ) {
+			return Helpers::result( 'hanja_ratio', '한자 사용', 'warning', "한자 비율 {$r}% (높음). 일반 독자에게 어려울 수 있습니다.", 5 );
+		}
+		return Helpers::result( 'hanja_ratio', '한자 사용', 'pass', "한자 비율 {$r}% (적절).", 5 );
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function informal_text( array $ctx ): array {
+		$len = (int) $ctx['content_length'];
+		if ( $len < 100 ) {
+			return Helpers::result( 'informal_text', '구어체/채팅체', 'na', '본문이 짧아 평가 생략.', 5 );
+		}
+		$count = preg_match_all( '/(?:' . self::INFORMAL . ')/u', (string) $ctx['content_text'] );
+		$count = is_int( $count ) ? $count : 0;
+		if ( $count === 0 ) {
+			return Helpers::result( 'informal_text', '구어체/채팅체', 'pass', '구어체/채팅체 없음.', 5 );
+		}
+		if ( $count >= 3 ) {
+			return Helpers::result( 'informal_text', '구어체/채팅체', 'fail', "구어체/채팅체가 {$count}회 등장 (ㅋㅋ/ㅠㅠ/헐 등). SEO 글에는 권장되지 않습니다.", 5 );
+		}
+		return Helpers::result( 'informal_text', '구어체/채팅체', 'warning', "구어체/채팅체 {$count}회 등장. 정식 글에서는 자제하세요.", 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

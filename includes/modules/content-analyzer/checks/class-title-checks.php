@@ -25,7 +25,21 @@ final class Title_Checks {
 		return [
 			self::title_length( $ctx ),
 			self::title_keyword_position( $ctx, $matcher ),
+			self::title_starts_with_keyword( $ctx ),
 		];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function title_starts_with_keyword( array $ctx ): array {
+		$kw    = (string) $ctx['focus_keyword'];
+		$title = (string) $ctx['title'];
+		if ( $kw === '' || $title === '' ) {
+			return Helpers::result( 'title_starts_with_keyword', '제목 시작 키워드', 'na', '', 5 );
+		}
+		if ( str_starts_with( mb_strtolower( $title ), mb_strtolower( $kw ) ) ) {
+			return Helpers::result( 'title_starts_with_keyword', '제목 시작 키워드', 'pass', '제목이 키워드로 시작합니다.', 5 );
+		}
+		return Helpers::result( 'title_starts_with_keyword', '제목 시작 키워드', 'warning', '제목을 키워드로 시작하면 SEO에 더 효과적입니다.', 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

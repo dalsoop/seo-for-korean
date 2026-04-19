@@ -20,7 +20,19 @@ final class Slug_Checks {
 	 * @return list<array{id: string, label: string, status: string, message: string, weight: int}>
 	 */
 	public static function run( array $ctx ): array {
-		return [ self::slug_quality( $ctx ) ];
+		return [ self::slug_quality( $ctx ), self::slug_uses_dashes( $ctx ) ];
+	}
+
+	/** @param array<string, mixed> $ctx */
+	private static function slug_uses_dashes( array $ctx ): array {
+		$slug = (string) $ctx['slug'];
+		if ( $slug === '' ) {
+			return Helpers::result( 'slug_uses_dashes', '슬러그 구분자', 'na', '', 5 );
+		}
+		if ( str_contains( $slug, '_' ) ) {
+			return Helpers::result( 'slug_uses_dashes', '슬러그 구분자', 'warning', '슬러그에 언더스코어(_)가 있습니다. 검색엔진은 하이픈(-)을 권장합니다.', 5 );
+		}
+		return Helpers::result( 'slug_uses_dashes', '슬러그 구분자', 'pass', '슬러그 구분자가 적절합니다.', 5 );
 	}
 
 	/** @param array<string, mixed> $ctx */

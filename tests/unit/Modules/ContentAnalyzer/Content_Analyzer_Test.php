@@ -29,7 +29,7 @@ final class Content_Analyzer_Test extends TestCase {
 		$result = $this->analyzer->analyze( [] );
 		self::assertLessThanOrEqual( 30, $result['score'], 'empty post should be poor' );
 		self::assertSame( 'poor', $result['grade'] );
-		self::assertCount( 24, $result['checks'] );
+		self::assertCount( 30, $result['checks'] );
 	}
 
 	public function test_well_formed_korean_post_scores_at_least_good(): void {
@@ -421,6 +421,38 @@ final class Content_Analyzer_Test extends TestCase {
 		$result = $this->analyzer->analyze( [ 'content' => "<p>{$body}</p>" ] );
 		$check  = $this->find_check( $result, 'transition_words' );
 		self::assertSame( 'pass', $check['status'] );
+	}
+
+	public function test_hanja_high_ratio_warns(): void {
+		// 본문 200자 이상 + 한자 다수 (>5%)
+		$body   = str_repeat( '韓國語는 漢字 文化圈에 屬한다. 漢字 學習은 必要하다. ', 10 );
+		$result = $this->analyzer->analyze( [ 'content' => "<p>{$body}</p>" ] );
+		$check  = $this->find_check( $result, 'hanja_ratio' );
+		self::assertSame( 'warning', $check['status'] );
+	}
+
+	public function test_informal_text_fails_with_three_or_more(): void {
+		$body   = str_repeat( '워드프레스 정말 좋아요 ㅋㅋㅋ. 진짜 대박 ㅠㅠ. 헐 너무 좋네요. 추가 본문 내용입니다. 좀 더 길게. ', 2 );
+		$result = $this->analyzer->analyze( [ 'content' => "<p>{$body}</p>" ] );
+		$check  = $this->find_check( $result, 'informal_text' );
+		self::assertSame( 'fail', $check['status'] );
+	}
+
+	public function test_title_starts_with_keyword_passes(): void {
+		$result = $this->analyzer->analyze(
+			[
+				'title'         => '워드프레스 입문 가이드: 한국어 블로그',
+				'focus_keyword' => '워드프레스',
+			]
+		);
+		$check = $this->find_check( $result, 'title_starts_with_keyword' );
+		self::assertSame( 'pass', $check['status'] );
+	}
+
+	public function test_slug_underscore_warns(): void {
+		$result = $this->analyzer->analyze( [ 'slug' => 'wordpress_guide_korean' ] );
+		$check  = $this->find_check( $result, 'slug_uses_dashes' );
+		self::assertSame( 'warning', $check['status'] );
 	}
 
 	/* ----- Helpers ----- */
