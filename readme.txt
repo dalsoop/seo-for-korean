@@ -1,6 +1,6 @@
 === SEO for Korean ===
-Contributors: Dalsoop
-Tags: seo, korean, naver
+Contributors: dalsoop
+Tags: seo, korean, naver, schema, sitemap
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
@@ -8,35 +8,72 @@ Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Korean WordPress SEO. Naver-aware, AI-assisted, GPL.
+Korean-first WordPress SEO. Google + Naver, with Korean-language readability checks no global plugin offers.
 
 == Description ==
 
-Korean WordPress SEO. Naver-aware, AI-assisted, GPL.
+SEO for Korean is a complete SEO toolkit built for the Korean web — where Naver, not just Google, decides who gets traffic.
 
-Features:
+**The 35-check content analyzer** runs in the Gutenberg sidebar and updates as you type. Length, keyword distribution, headings, images, links, slug, schema-readiness — all the standard SEO signals, plus four Korean-specific checks no English-first plugin can do:
 
-* Modular architecture — enable/disable features independently.
-* REST API for editor integrations.
-* Gutenberg sidebar panel.
-* i18n-ready.
+* **Ending consistency** — flags 해요체 / 합쇼체 mixing
+* **Transition words** — counts Korean connectors (그러나, 따라서, 즉…)
+* **Hanja ratio** — warns when 한자 use exceeds 5%
+* **Informal text** — catches ㅋㅋ ㅠㅠ 헐 대박 chat-style markers
+* **Passive voice** — 26 Korean passive markers
+
+Korean particles are handled in keyword matching: search for "워드프레스" and the analyzer correctly counts "워드프레스를", "워드프레스의", "워드프레스가", and 22 other particle suffixes.
+
+**11 schema.org types** auto-emit as a single JSON-LD `@graph` block:
+WebSite, Organization, Person, BlogPosting / NewsArticle / Article, BreadcrumbList, FAQPage (auto-detect from Q&A patterns), HowTo (from numbered lists), Review (from ★ ratings), Recipe (with ingredient & instruction extraction from "재료:" and "만드는 법:"), Event (from "일시:" / "장소:"), VideoObject (YouTube / Vimeo embeds).
+
+**Comprehensive sitemap suite** — `/sitemap.xml` index plus per-content-type sub-sitemaps (posts, pages, categories, tags). Replaces WP core's `/wp-sitemap.xml`. Submit one URL to both Google Search Console and Naver Search Advisor.
+
+**Naver-specific extras** — `naver-site-verification` meta tag, `/sitemap-naver.xml` legacy URL, KakaoTalk sharing image hint when featured images fall below 300×300.
+
+**Title & meta templates** — 11 variables (`%title%`, `%sitename%`, `%separator%`, `%excerpt%`, `%category%`, `%focuskw%`…) usable across single posts, pages, categories, tags, search results, 404 pages, and home.
+
+**Image SEO** — auto-fills missing alt text from attachment title → cleaned filename → parent post title. Korean filename heuristics (스크린샷, 화면 캡처) skip default camera/screenshot names.
+
+**Pattern-based redirections** — exact, prefix, and regex matching with 301/302/307/308/410 status codes. Paired with a 404 monitor that logs hit URLs (top 50, LRU eviction) for later promotion to redirect rules.
 
 == Installation ==
 
-1. Upload the plugin to `/wp-content/plugins/seo-for-korean/`.
-2. Activate the plugin via the 'Plugins' menu.
-3. Configure under Settings → SEO for Korean.
+1. Download the latest release zip from [GitHub releases](https://github.com/dalsoop/seo-for-korean/releases).
+2. Upload via WordPress admin → Plugins → Add New → Upload Plugin.
+3. Activate. Ten modules turn on by default — no further configuration required to start scoring posts.
+4. Open the Gutenberg editor on any post; the SEO for Korean sidebar panel shows the live score.
+
+For Naver Search Advisor verification, set the meta tag value via filter in your theme's `functions.php`:
+
+`add_filter( 'sfk/naver_meta/site_verification', fn() => 'YOUR_NAVER_CODE' );`
 
 == Frequently Asked Questions ==
 
-= Does this require an external service? =
+= Does this replace Yoast / RankMath? =
 
-See plugin settings.
+For Korean sites, yes — it covers the same surface and adds the Korean-language checks they don't.
+
+= Does it work with English content? =
+
+The structural checks (length, headings, images, links, schema, sitemap) work for any language. The Korean-specific readability checks return "na" status for English content rather than producing meaningless results.
+
+= Does it call any external services? =
+
+No, by default. An optional morphology gateway can be configured for Korean keyword analysis (currently regex-based; lindera+ko-dic morphology planned). Without it, all analysis runs locally in PHP.
+
+= Where is the settings UI? =
+
+V1 has no admin settings page — power-user configuration is via filter hooks. A React-based admin page is on the roadmap for V2.
 
 == Changelog ==
 
 = 0.1.0 =
 * Initial release.
+* 10 modules: content-analyzer, head-meta, schema, sitemap, templates, images, redirections, monitor-404, naver-meta, naver-sitemap.
+* 35 SEO checks across 8 domains.
+* 11 schema.org types with auto-detection (Recipe, Event, VideoObject, Review, FAQPage, HowTo, Article/BlogPosting/NewsArticle, BreadcrumbList, Person, Organization, WebSite).
+* Korean-specific: 해요체/합쇼체 consistency, transition words, 한자 ratio, informal text, passive voice, particle-aware keyword matching.
 
 == Upgrade Notice ==
 
